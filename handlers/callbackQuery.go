@@ -17,17 +17,15 @@ func HandleNewCallbackQuery(ctx telebot.Context) error {
 	callbackQuery := ctx.Callback()
 	callbackData := callbackQuery.Data
 	chatID := callbackQuery.Message.Chat.ID
-	stringChatID := strconv.Itoa(int(chatID))
 	stringMessageID := strconv.Itoa(ctx.Callback().Message.ID)
 	senderID := ctx.Callback().Sender.ID
-	stringSenderID := strconv.Itoa(int(senderID))
 	if callbackData == "about" {
 		err = ctx.Edit(globals.AboutTeamAnswer, &telebot.SendOptions{ParseMode: "markdown", ReplyMarkup: globals.AboutKeyboard})
 	} else if callbackData == "about_bot" {
 		err = ctx.Edit(globals.StartAnswer, &telebot.SendOptions{ParseMode: "markdown", ReplyMarkup: globals.StartKeyboard})
 	}
-	panelOwner := database.Get("group:" + stringChatID + ":panel:" + stringMessageID + ":owner")
-	if stringSenderID == panelOwner && database.SIsMember("group:"+stringChatID+":admins", panelOwner) {
+	panelOwner := database.Get("group:" + functions.Int64ToString(chatID) + ":panel:" + stringMessageID + ":owner")
+	if functions.Int64ToString(senderID) == panelOwner && database.IsAdmin(functions.StringToInt64(panelOwner), chatID) {
 		if callbackData == "back_help" {
 			err = ctx.Edit(globals.BackToHelpAnswer, &telebot.SendOptions{ParseMode: "markdown", ReplyMarkup: globals.HelpKeyboard})
 		} else if strings.HasSuffix(callbackData, "_help") {

@@ -5,7 +5,6 @@ import (
 	"FergalManagerClone/functions"
 	"FergalManagerClone/globals"
 	"fmt"
-	"strconv"
 
 	"gopkg.in/telebot.v3"
 )
@@ -13,7 +12,7 @@ import (
 func NewMyChatMemberHandler(ctx telebot.Context) error {
 	var err error
 	chatID := ctx.Chat().ID
-	stringChatID := strconv.Itoa(int(chatID))
+	stringChatID := functions.Int64ToString(chatID)
 	baseGroupKey := fmt.Sprintf("group:%s:", stringChatID)
 	if ctx.Bot().Me.Username == ctx.ChatMember().NewChatMember.User.Username {
 		if ctx.ChatMember().NewChatMember.Role == "member" {
@@ -22,15 +21,15 @@ func NewMyChatMemberHandler(ctx telebot.Context) error {
 				admins, err := ctx.Bot().AdminsOf(ctx.Chat())
 				functions.HandleError(err)
 				for _, v := range admins {
-					userID := strconv.Itoa(int(v.User.ID))
+					userID := v.User.ID
 					if v.Role == "creator" || v.Role == "owner" {
-						database.Set(baseGroupKey+"owner", userID)
-						database.SAdd(baseGroupKey+"owners", userID)
+						database.Set(baseGroupKey+"owner", functions.Int64ToString(userID))
+						database.AddOwner(userID, chatID)
 					}
-					database.SAdd(baseGroupKey+"admins", userID)
+					database.AddAdmin(userID, chatID)
 				}
 				database.Set(baseGroupKey+"rudeMode", "0")
-				database.SAdd("installedGroups", stringChatID)
+				database.InstallGroup(chatID)
 				v := &telebot.Video{File: telebot.FromDisk("assets/installed.mp4")}
 				v.Caption = globals.InstalledAnswer
 				functions.HandleError(ctx.SendAlbum(telebot.Album{v}))

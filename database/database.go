@@ -15,6 +15,12 @@ func SAdd(key string, value string) int {
 	return int(result)
 }
 
+func SRem(key string, value string) int {
+	result, err := redisDatabase.SRem(key, value).Result()
+	functions.HandleError(err)
+	return int(result)
+}
+
 func Set(key string, value string) string {
 	result, err := redisDatabase.Set(key, value, 0).Result()
 	functions.HandleError(err)
@@ -27,15 +33,6 @@ func Rem(key string) int {
 	return int(result)
 }
 
-func RemoveGroup(groupChatID string) int {
-	result, err := redisDatabase.Keys("group:" + groupChatID + ":*").Result()
-	functions.HandleError(err)
-	for _, v := range result {
-		Rem(v)
-	}
-	return 1
-}
-
 func SIsMember(key string, value string) bool {
 	result, err := redisDatabase.SIsMember(key, value).Result()
 	functions.HandleError(err)
@@ -44,6 +41,12 @@ func SIsMember(key string, value string) bool {
 
 func Get(key string) string {
 	result, err := redisDatabase.Get(key).Result()
+	functions.HandleError(err)
+	return result
+}
+
+func SMembers(key string) []string {
+	result, err := redisDatabase.SMembers(key).Result()
 	functions.HandleError(err)
 	return result
 }
