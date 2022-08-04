@@ -27,7 +27,10 @@ func HandleNewMessages(ctx telebot.Context) error {
 	} else {
 		if database.SIsMember("installedGroups", stringChatID) && database.SIsMember("group:"+stringChatID+":admins", stringSenderID) {
 			if textMessage == "راهنما" {
-				err = ctx.Send(globals.HelpAnswer, &telebot.SendOptions{ReplyMarkup: globals.HelpKeyboard})
+				// database.SAdd("group:"+stringChatID+":panels", stringMessageID)
+				sendedMessage, err := ctx.Bot().Send(chat, globals.HelpAnswer, &telebot.SendOptions{ReplyMarkup: globals.HelpKeyboard})
+				database.Set("group:"+stringChatID+":panel:"+strconv.Itoa(sendedMessage.ID)+":owner", stringSenderID)
+				functions.HandleError(err)
 			}
 		}
 	}

@@ -41,3 +41,9 @@ func SIsMember(key string, value string) bool {
 	functions.HandleError(err)
 	return result
 }
+
+func Get(key string) string {
+	result, err := redisDatabase.Get(key).Result()
+	functions.HandleError(err)
+	return result
+}

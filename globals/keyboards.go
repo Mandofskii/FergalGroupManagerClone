@@ -92,71 +92,85 @@ var (
 			}, {
 				telebot.InlineButton{
 					Text: "╼ ضد پورن",
-					Data: "vip_help",
+					Data: "porn_help",
 				},
 				telebot.InlineButton{
 					Text: "خوشامدگویی ╾",
-					Data: "ban_help",
+					Data: "welcome_help",
 				},
 			}, {
 				telebot.InlineButton{
 					Text: "╼ فان",
-					Data: "vip_help",
+					Data: "fun_help",
 				},
 				telebot.InlineButton{
 					Text: "قفل ها ╾",
-					Data: "ban_help",
+					Data: "locks_help",
 				},
 			}, {
 				telebot.InlineButton{
 					Text: "╼ پاکسازی",
-					Data: "vip_help",
+					Data: "cleaning_help",
 				},
 				telebot.InlineButton{
 					Text: "ضد تبچی ╾",
-					Data: "ban_help",
+					Data: "tabchi_help",
 				},
 			}, {
 				telebot.InlineButton{
 					Text: "╼ بی ادب و با ادب",
-					Data: "vip_help",
+					Data: "rudemode_help",
 				},
 				telebot.InlineButton{
 					Text: "ضد خیانت ╾",
-					Data: "ban_help",
+					Data: "khianat_help",
 				},
 			}, {
 				telebot.InlineButton{
 					Text: "╼ متفرقه",
-					Data: "vip_help",
+					Data: "other_help",
 				},
 				telebot.InlineButton{
 					Text: "کانال و یوزرنیم مجاز ╾",
-					Data: "ban_help",
+					Data: "allowed_help",
 				},
 			}, {
 				telebot.InlineButton{
 					Text: "╼ پیام رگباری و ضد اسپم",
-					Data: "vip_help",
+					Data: "spam_help",
 				},
 				telebot.InlineButton{
 					Text: "آمار ╾",
-					Data: "ban_help",
+					Data: "stats_help",
 				},
 			}, {
 				telebot.InlineButton{
 					Text: "╼ دسترسی مدیران",
-					Data: "vip_help",
+					Data: "admins_help",
 				},
 				telebot.InlineButton{
 					Text: "ارتقای مقام ╾",
-					Data: "ban_help",
+					Data: "promotion_help",
 				},
 			}, {
 				telebot.InlineButton{
 					Text: "╼ بازگشت به منوی اصلی ╾ ",
-					Data: "vip_help",
+					Data: "back_help",
 				},
+			},
+		},
+	}
+	BackToPanelKeyboard *telebot.ReplyMarkup = &telebot.ReplyMarkup{
+		InlineKeyboard: [][]telebot.InlineButton{
+			{
+				{Text: "╼ بازگشت به منوی اصلی ╾ ", Data: "back_panel"},
+			},
+		},
+	}
+	BackToHelpKeyboard *telebot.ReplyMarkup = &telebot.ReplyMarkup{
+		InlineKeyboard: [][]telebot.InlineButton{
+			{
+				{Text: "╼ بازگشت ╾ ", Data: "back_help"},
 			},
 		},
 	}
