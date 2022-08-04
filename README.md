@@ -10,5 +10,9 @@ Todo list :
   
   - Locks commands and handlers
 
+  - Mute & Ban system
+  - Filter System
+  - Promotion System
+
 
 **Note**: I'm not a Golang developer
