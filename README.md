@@ -9,3 +9,6 @@ Todo list :
   - Vip commands and handlers
   
   - Locks commands and handlers
+
+
+**Note**: I'm not a Golang developer
