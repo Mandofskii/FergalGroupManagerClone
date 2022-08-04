@@ -6,7 +6,7 @@ Todo list :
 
 - Add commands :
 
-  - Vip commands and handlers
+  - ~~Vip commands~~ and handlers
   
   - Locks commands and handlers
 
