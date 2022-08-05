@@ -10,7 +10,7 @@ Todo list :
   
   - Locks commands and handlers
 
-  - Mute & Ban system
+  - ~~Mute~~ & Ban system
   - Filter System
   - Promotion System
 
