@@ -35,8 +35,17 @@ func CreateMarkdownMention(userID int64, name string) string {
 	return "[" + name + "](tg://user?id=" + Int64ToString(userID) + ")"
 }
 
+func zip(a1, a2 []string) []string {
+	r := make([]string, 2*len(a1))
+	for i, e := range a1 {
+		r[i*2] = e
+		r[i*2+1] = a2[i]
+	}
+	return r
+}
+
 func GetMuteTime(text string) (int64, string, string) {
-	timeTTL := 0
+	timeTTL := 1
 	muteRegexPattern := `(mute|سکوت)( (\d+) (m|h|d|روز|دقیقه|ساعت) ?)?(.*)`
 	r := regexp.MustCompile(muteRegexPattern)
 	matches := r.FindStringSubmatch(text)
@@ -51,16 +60,29 @@ func GetMuteTime(text string) (int64, string, string) {
 				timeTTL *= (60 * 60)
 			} else if matches[4] == "m" || matches[4] == "دقیقه" {
 				timeTTL, _ = strconv.Atoi(matches[3])
-				timeTTL = 60 * timeTTL
+				timeTTL *= 60
 			}
 		}
 	}
 	last := ""
 	if matches[2] != "" {
-		last = strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(matches[2], "d", "روز"), "h", "ساعت"), "m", "دقیقه"), " ", "")
+		array1 := []string{"d", "h", "m"}
+		array2 := []string{"روز", "ساعت", "دقیقه"}
+		last = matches[3] + " " + strings.NewReplacer(zip(array1, array2)...).Replace(matches[4])
 	} else {
 		last = "همیشه"
 	}
-	fmt.Printf("%#v", matches)
 	return int64(timeTTL), matches[5], last
+}
+
+func IsBotAdmin(bot *telebot.Bot, chat *telebot.Chat) *telebot.ChatMember {
+	chatMember, err := bot.ChatMemberOf(chat, Int64ToString(bot.Me.ID))
+	HandleError(err)
+	return chatMember
+}
+
+func IsGAdmin(bot *telebot.Bot, chat *telebot.Chat, user string) bool {
+	chatMember, err := bot.ChatMemberOf(chat, user)
+	HandleError(err)
+	return chatMember.Role == "administrator" || chatMember.Role == "creator"
 }

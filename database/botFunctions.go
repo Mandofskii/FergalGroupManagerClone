@@ -90,20 +90,31 @@ func RemoveGroup(groupChatID string) {
 }
 
 func AddMute(userID, chatID int64, hash string, until int) {
+	fmt.Printf("%#v", ListMute(chatID))
 	stringUserID, stringChatID := functions.Int64ToString(userID), functions.Int64ToString(chatID)
 	SAdd("group:"+stringChatID+":mutes", stringUserID+"|"+hash)
+	if until == 1 {
+		until = 0
+	}
 	Set("group:"+stringChatID+":muted:hash:"+hash, "nothing special here", until)
 }
 
 func IsMute(userID, chatID int64) bool {
-	stringUserID, stringChatID := functions.Int64ToString(userID), functions.Int64ToString(chatID)
-	return SIsMember("group:"+stringChatID+":mutes", stringUserID)
+	stringUserID := functions.Int64ToString(userID)
+	for _, muted := range ListMute(chatID) {
+		fmt.Println(muted)
+		if strings.Split(muted, "|")[0] == stringUserID {
+			return true
+		}
+	}
+	return false
 }
 
 func ListMute(chatID int64) []string {
 	correctedList := []string{}
 	stringChatID := functions.Int64ToString(chatID)
 	result := SMembers("group:" + stringChatID + ":mutes")
+	fmt.Printf("%#v\n", result)
 	for _, muted := range result {
 		if Get("group:"+stringChatID+":muted:hash:"+strings.Split(muted, "|")[1]) != "" {
 			correctedList = append(correctedList, strings.Split(muted, "|")[0])
@@ -121,15 +132,18 @@ func CleanMute(chatID int64) {
 
 func RemMute(userID, chatID int64) {
 	stringUserID, stringChatID := functions.Int64ToString(userID), functions.Int64ToString(chatID)
-	SRem("group:"+stringChatID+":mutes", stringUserID)
+	for _, muted := range SMembers("group:" + stringChatID + ":mutes") {
+		if strings.Split(muted, "|")[0] == stringUserID {
+			SRem("group:"+stringChatID+":mutes", muted)
+		}
+	}
 }
 
 func MuteUser(bot *telebot.Bot, chat *telebot.Chat, userID, timeTTL int64) {
 	chatMember, _ := bot.ChatMemberOf(chat, functions.Int64ToString(userID))
 	chatMember.CanSendMessages = false
-	if timeTTL != 0 {
+	if timeTTL != 1 {
 		chatMember.RestrictedUntil = time.Now().Unix() + int64(timeTTL)
-		fmt.Println(chatMember.RestrictedUntil)
 	}
 	bot.Restrict(chat, chatMember)
 	hash := uuid.NewString()
