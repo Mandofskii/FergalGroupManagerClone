@@ -1,7 +1,7 @@
 from pyrogram import Client
 from redis import StrictRedis
 
-app = Client("fergalUserBot", 000, "000", phone_number="+0000")
+app = Client("fergalUserBot", 0000, "000", phone_number="+000")
 redisdb = StrictRedis("127.0.0.1", 6379, 9)
 @app.on_message()
 async def main(cli: Client, msg):

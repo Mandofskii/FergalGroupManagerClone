@@ -3,6 +3,7 @@ package database
 import (
 	"FergalManagerClone/functions"
 	"FergalManagerClone/globals"
+	"time"
 
 	"gopkg.in/redis.v5"
 )
@@ -21,8 +22,8 @@ func SRem(key string, value string) int {
 	return int(result)
 }
 
-func Set(key string, value string) string {
-	result, err := redisDatabase.Set(key, value, 0).Result()
+func Set(key string, value string, expire int) string {
+	result, err := redisDatabase.Set(key, value, time.Duration(expire*1000000000)).Result()
 	functions.HandleError(err)
 	return result
 }

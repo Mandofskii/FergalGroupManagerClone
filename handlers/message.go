@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/google/uuid"
 	"gopkg.in/telebot.v3"
 )
 
@@ -33,8 +32,17 @@ func HandleNewMessages(ctx telebot.Context) error {
 			case lowerText == "راهنما":
 				// database.SAdd("group:"+stringChatID+":panels", stringMessageID)
 				sendedMessage, err := ctx.Bot().Send(chat, globals.HelpAnswer, &telebot.SendOptions{ReplyMarkup: globals.HelpKeyboard})
-				database.Set("group:"+stringChatID+":panel:"+strconv.Itoa(sendedMessage.ID)+":owner", stringSenderID)
+				database.Set("group:"+stringChatID+":panel:"+strconv.Itoa(sendedMessage.ID)+":owner", stringSenderID, 0)
 				functions.HandleError(err)
+			case strings.Contains(lowerText, "clean vip list"), strings.Contains(lowerText, "پاکسازی لیست ویژه"):
+				answer := ""
+				if len(database.ListVip(chatID)) == 0 {
+					answer = globals.VipListAlreadyEmpty
+				} else {
+					database.CleanVip(chatID)
+					answer = globals.VipListCleaned
+				}
+				ctx.Send(answer)
 			case strings.Contains(lowerText, "vip"), strings.Contains(lowerText, "ویژه"):
 				firstName := ""
 				userID := int64(0)
@@ -45,23 +53,15 @@ func HandleNewMessages(ctx telebot.Context) error {
 					_, _ = firstName, userID
 				} else {
 					base := strings.Split(textMessage, " ")
+					username := base[len(base)-1]
 					for _, v := range message.Entities {
-						if v.Offset == len(base[0])+1 {
-							if !strings.HasPrefix(base[1], "@") {
+						if v.Offset == len(textMessage)-len(username) {
+							if !strings.HasPrefix(username, "@") {
 								firstName = v.User.FirstName
 								userID = v.User.ID
 								_, _ = firstName, userID
 							} else {
-								uuidRandom := uuid.NewString()
-								ctx.Bot().Send(&telebot.User{ID: 5187419061}, "/getid "+base[1]+"\n"+stringChatID+"\n"+uuidRandom)
-								for {
-									if database.Get("group:"+stringChatID+":hash:"+uuidRandom) != "" {
-										userBase := strings.Split(database.Get("group:"+stringChatID+":hash:"+uuidRandom), "|")
-										firstName = userBase[0]
-										userID = functions.StringToInt64(userBase[1])
-										break
-									}
-								}
+								firstName, userID = database.GetUserIDByUsername(ctx.Bot(), username, chatID)
 							}
 						}
 					}
@@ -69,12 +69,12 @@ func HandleNewMessages(ctx telebot.Context) error {
 				answer := ""
 				mention := functions.CreateMarkdownMention(userID, firstName)
 				if database.IsVip(userID, chatID) {
-					answer = fmt.Sprintf(globals.AlreadyAddedToVip)
+					answer = fmt.Sprintf(globals.AlreadyAddedToVip, mention)
 				} else {
 					if database.IsOwner(userID, chatID) {
-						answer = fmt.Sprintf(globals.VipHaveRole, mention, "مالک")
+						answer = fmt.Sprintf(globals.HaveRole, mention, "مالک")
 					} else if database.IsAdmin(userID, chatID) {
-						answer = fmt.Sprintf(globals.VipHaveRole, mention, "مدیر")
+						answer = fmt.Sprintf(globals.HaveRole, mention, "مدیر")
 					} else {
 						database.AddVip(userID, chatID)
 						answer = fmt.Sprintf(globals.AddedToVip, mention)
@@ -91,23 +91,15 @@ func HandleNewMessages(ctx telebot.Context) error {
 					_, _ = firstName, userID
 				} else {
 					base := strings.Split(textMessage, " ")
+					username := base[len(base)-1]
 					for _, v := range message.Entities {
-						if v.Offset == len(base[0])+1 {
-							if !strings.HasPrefix(base[1], "@") {
+						if v.Offset == len(textMessage)-len(username) {
+							if !strings.HasPrefix(username, "@") {
 								firstName = v.User.FirstName
 								userID = v.User.ID
 								_, _ = firstName, userID
 							} else {
-								uuidRandom := uuid.NewString()
-								ctx.Bot().Send(&telebot.User{ID: 5187419061}, "/getid "+base[1]+"\n"+stringChatID+"\n"+uuidRandom)
-								for {
-									if database.Get("group:"+stringChatID+":hash:"+uuidRandom) != "" {
-										userBase := strings.Split(database.Get("group:"+stringChatID+":hash:"+uuidRandom), "|")
-										firstName = userBase[0]
-										userID = functions.StringToInt64(userBase[1])
-										break
-									}
-								}
+								firstName, userID = database.GetUserIDByUsername(ctx.Bot(), username, chatID)
 							}
 						}
 					}
@@ -118,24 +110,103 @@ func HandleNewMessages(ctx telebot.Context) error {
 					answer = fmt.Sprintf(globals.AlreadyRemovedFromVip)
 				} else {
 					if database.IsOwner(userID, chatID) {
-						answer = fmt.Sprintf(globals.VipHaveRole, mention, "مالک")
+						answer = fmt.Sprintf(globals.HaveRole, mention, "مالک")
 					} else if database.IsAdmin(userID, chatID) {
-						answer = fmt.Sprintf(globals.VipHaveRole, mention, "مدیر")
+						answer = fmt.Sprintf(globals.HaveRole, mention, "مدیر")
 					} else {
 						database.RemVip(userID, chatID)
 						answer = fmt.Sprintf(globals.RemovedFromVip, mention)
 					}
 				}
 				ctx.Send(answer, &telebot.SendOptions{ParseMode: "markdown"})
-			case strings.Contains(lowerText, "clean vip list"), strings.Contains(lowerText, "پاکسازی لیست ویژه"):
+			case strings.Contains(lowerText, "clean mute list"), strings.Contains(lowerText, "پاکسازی لیست سکوت"):
 				answer := ""
-				if len(database.ListVip(chatID)) == 0 {
-					answer = globals.VipListAlreadyEmpty
+				if len(database.ListMute(chatID)) == 0 {
+					answer = globals.MuteListAlreadyEmpty
 				} else {
-					database.CleanVip(chatID)
-					answer = globals.VipListCleaned
+
+					for _, muted := range database.ListMute(chatID) {
+						database.UnmuteUser(ctx.Bot(), chat, functions.StringToInt64(muted))
+					}
+					database.CleanMute(chatID)
+					answer = globals.MuteListCleaned
 				}
 				ctx.Send(answer)
+			case strings.Contains(lowerText, "unmute"), strings.Contains(lowerText, "حذف سکوت"):
+				firstName := ""
+				userID := int64(0)
+				if message.ReplyTo != nil {
+					fmt.Println(message.ReplyTo.Sender.ID)
+					firstName = message.ReplyTo.Sender.FirstName
+					userID = message.ReplyTo.Sender.ID
+					_, _ = firstName, userID
+				} else {
+					base := strings.Split(textMessage, " ")
+					username := base[len(base)-1]
+					for _, v := range message.Entities {
+						fmt.Println(username, textMessage)
+						if v.Offset == len([]rune(textMessage))-len([]rune(username)) {
+							if !strings.HasPrefix(username, "@") {
+								firstName = v.User.FirstName
+								userID = v.User.ID
+								_, _ = firstName, userID
+							} else {
+								firstName, userID = database.GetUserIDByUsername(ctx.Bot(), username, chatID)
+							}
+						}
+					}
+				}
+				answer := ""
+				mention := functions.CreateMarkdownMention(userID, firstName)
+				if database.IsOwner(userID, chatID) {
+					answer = fmt.Sprintf(globals.HaveRole, mention, "مالک")
+				} else if database.IsAdmin(userID, chatID) {
+					answer = fmt.Sprintf(globals.HaveRole, mention, "مدیر")
+				} else {
+					database.UnmuteUser(ctx.Bot(), chat, userID)
+					answer = fmt.Sprintf(globals.RemovedFromMuteList, mention)
+				}
+
+				ctx.Send(answer, &telebot.SendOptions{ParseMode: "markdown"})
+			case strings.Contains(lowerText, "mute"), strings.Contains(lowerText, "سکوت"):
+				firstName := ""
+				userID := int64(0)
+				timeTTL, username, last := functions.GetMuteTime(lowerText)
+				if message.ReplyTo != nil {
+					firstName = message.ReplyTo.Sender.FirstName
+					userID = message.ReplyTo.Sender.ID
+				} else {
+					for _, v := range message.Entities {
+						fmt.Println(len([]rune(textMessage)))
+						if v.Offset == len([]rune(textMessage))-len([]rune(username)) {
+
+							if !strings.HasPrefix(username, "@") {
+								firstName = v.User.FirstName
+								userID = v.User.ID
+								_, _ = firstName, userID
+								fmt.Println(username)
+
+							} else {
+								firstName, userID = database.GetUserIDByUsername(ctx.Bot(), username, chatID)
+							}
+						}
+					}
+				}
+				answer := ""
+				mention := functions.CreateMarkdownMention(userID, firstName)
+				if database.IsMute(userID, chatID) {
+					answer = fmt.Sprintf(globals.AlreadyAddedToMuteList, mention)
+				} else {
+					if database.IsOwner(userID, chatID) {
+						answer = fmt.Sprintf(globals.HaveRole, mention, "مالک")
+					} else if database.IsAdmin(userID, chatID) {
+						answer = fmt.Sprintf(globals.HaveRole, mention, "مدیر")
+					} else {
+						database.MuteUser(ctx.Bot(), chat, userID, timeTTL)
+						answer = fmt.Sprintf(globals.AddedToMuteList, mention, last)
+					}
+				}
+				ctx.Send(answer, &telebot.SendOptions{ParseMode: "markdown"})
 			}
 
 		}

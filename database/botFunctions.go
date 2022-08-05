@@ -2,7 +2,13 @@ package database
 
 import (
 	"FergalManagerClone/functions"
+	"fmt"
 	"strconv"
+	"strings"
+	"time"
+
+	"github.com/google/uuid"
+	"gopkg.in/telebot.v3"
 )
 
 func AddAdmin(userID, chatID int64) {
@@ -43,7 +49,7 @@ func IsInstalled(chatID int64) bool {
 
 func OpenPanel(ownerID, chatID int64, messageID int) {
 	stringOwnerID, stringChatID, stringMessageID := functions.Int64ToString(ownerID), functions.Int64ToString(chatID), strconv.Itoa(messageID)
-	Set("group:"+stringChatID+":panel:"+stringMessageID+":owner", stringOwnerID)
+	Set("group:"+stringChatID+":panel:"+stringMessageID+":owner", stringOwnerID, 0)
 }
 
 func AddVip(userID, chatID int64) {
@@ -81,4 +87,74 @@ func RemoveGroup(groupChatID string) {
 	for _, v := range result {
 		Rem(v)
 	}
+}
+
+func AddMute(userID, chatID int64, hash string, until int) {
+	stringUserID, stringChatID := functions.Int64ToString(userID), functions.Int64ToString(chatID)
+	SAdd("group:"+stringChatID+":mutes", stringUserID+"|"+hash)
+	Set("group:"+stringChatID+":muted:hash:"+hash, "nothing special here", until)
+}
+
+func IsMute(userID, chatID int64) bool {
+	stringUserID, stringChatID := functions.Int64ToString(userID), functions.Int64ToString(chatID)
+	return SIsMember("group:"+stringChatID+":mutes", stringUserID)
+}
+
+func ListMute(chatID int64) []string {
+	correctedList := []string{}
+	stringChatID := functions.Int64ToString(chatID)
+	result := SMembers("group:" + stringChatID + ":mutes")
+	for _, muted := range result {
+		if Get("group:"+stringChatID+":muted:hash:"+strings.Split(muted, "|")[1]) != "" {
+			correctedList = append(correctedList, strings.Split(muted, "|")[0])
+		} else {
+			SRem("group:"+stringChatID+":mutes", muted)
+		}
+	}
+	return correctedList
+}
+
+func CleanMute(chatID int64) {
+	stringChatID := functions.Int64ToString(chatID)
+	Rem("group:" + stringChatID + ":mutes")
+}
+
+func RemMute(userID, chatID int64) {
+	stringUserID, stringChatID := functions.Int64ToString(userID), functions.Int64ToString(chatID)
+	SRem("group:"+stringChatID+":mutes", stringUserID)
+}
+
+func MuteUser(bot *telebot.Bot, chat *telebot.Chat, userID, timeTTL int64) {
+	chatMember, _ := bot.ChatMemberOf(chat, functions.Int64ToString(userID))
+	chatMember.CanSendMessages = false
+	if timeTTL != 0 {
+		chatMember.RestrictedUntil = time.Now().Unix() + int64(timeTTL)
+		fmt.Println(chatMember.RestrictedUntil)
+	}
+	bot.Restrict(chat, chatMember)
+	hash := uuid.NewString()
+	AddMute(userID, chat.ID, hash, int(timeTTL))
+}
+
+func UnmuteUser(bot *telebot.Bot, chat *telebot.Chat, userID int64) {
+	chatMember, _ := bot.ChatMemberOf(chat, functions.Int64ToString(userID))
+	chatMember.CanSendMessages = true
+	bot.Restrict(chat, chatMember)
+	RemMute(userID, chat.ID)
+}
+
+func GetUserIDByUsername(bot *telebot.Bot, username string, chatID int64) (string, int64) {
+	uuidRandom := uuid.NewString()
+	stringChatID := functions.Int64ToString(chatID)
+	firstName, userID := "", int64(0)
+	bot.Send(&telebot.User{ID: 5187419061}, "/getid "+username+"\n"+stringChatID+"\n"+uuidRandom)
+	for {
+		if Get("group:"+stringChatID+":hash:"+uuidRandom) != "" {
+			userBase := strings.Split(Get("group:"+stringChatID+":hash:"+uuidRandom), "|")
+			firstName = userBase[0]
+			userID = functions.StringToInt64(userBase[1])
+			break
+		}
+	}
+	return firstName, userID
 }

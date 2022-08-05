@@ -23,12 +23,12 @@ func NewMyChatMemberHandler(ctx telebot.Context) error {
 				for _, v := range admins {
 					userID := v.User.ID
 					if v.Role == "creator" || v.Role == "owner" {
-						database.Set(baseGroupKey+"owner", functions.Int64ToString(userID))
+						database.Set(baseGroupKey+"owner", functions.Int64ToString(userID), 0)
 						database.AddOwner(userID, chatID)
 					}
 					database.AddAdmin(userID, chatID)
 				}
-				database.Set(baseGroupKey+"rudeMode", "0")
+				database.Set(baseGroupKey+"rudeMode", "0", 0)
 				database.InstallGroup(chatID)
 				v := &telebot.Video{File: telebot.FromDisk("assets/installed.mp4")}
 				v.Caption = globals.InstalledAnswer
