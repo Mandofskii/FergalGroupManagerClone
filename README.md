@@ -6,12 +6,12 @@ Todo list :
 
 - Add commands :
 
-  - ~~Vip commands~~ and handlers
+  - ~~Vip commands and handlers~~ 
   
   - Locks commands and handlers
 
   - ~~Mute~~ & Ban system
-  - Filter System
+  - ~~Filter System~~
   - Promotion System
 
 
