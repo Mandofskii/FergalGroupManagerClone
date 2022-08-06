@@ -78,7 +78,15 @@ func RemVip(userID, chatID int64) {
 }
 
 func InstallGroup(chatID int64) {
+	baseGroupKey := "group:" + functions.Int64ToString(chatID) + ":"
+	Set(baseGroupKey+"rudeMode", "0", 0)
+	Set(baseGroupKey+"autoConfigure", "1", 0)
 	SAdd("installedGroups", functions.Int64ToString(chatID))
+}
+
+func IsAutoConfigure(chatID int64) bool {
+	baseGroupKey := "group:" + functions.Int64ToString(chatID) + ":"
+	return Get(baseGroupKey+"autoConfigure") == "1"
 }
 
 func RemoveGroup(groupChatID string) {
@@ -171,4 +179,33 @@ func GetUserIDByUsername(bot *telebot.Bot, username string, chatID int64) (strin
 		}
 	}
 	return firstName, userID
+}
+
+func IsFilter(chatID int64, word string) bool {
+	return SIsMember("group:"+functions.Int64ToString(chatID)+":filters", word)
+}
+
+func AddFilter(chatID int64, word string) {
+	SAdd("group:"+functions.Int64ToString(chatID)+":filters", word)
+}
+
+func RemFilter(chatID int64, word string) {
+	SRem("group:"+functions.Int64ToString(chatID)+":filters", word)
+}
+
+func ListFilter(chatID int64) []string {
+	return SMembers("group:" + functions.Int64ToString(chatID) + ":filters")
+}
+
+func HasFilteredWord(chatID int64, text string) bool {
+	for _, word := range ListFilter(chatID) {
+		if strings.Contains(text, word) {
+			return true
+		}
+	}
+	return false
+}
+
+func CleanFilter(chatID int64) {
+	Rem("group:" + functions.Int64ToString(chatID) + ":filters")
 }

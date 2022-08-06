@@ -11,7 +11,7 @@ import (
 // Bot
 var (
 	Token       string              = "5434857575:AAGmL7_QzF1EdRqsMrdpJ3mYNBJr0snVYAM"
-	BotPoller   *telebot.LongPoller = &telebot.LongPoller{Timeout: 10 * time.Second}
+	BotPoller   *telebot.LongPoller = &telebot.LongPoller{Timeout: 10 * time.Second, AllowedUpdates: []string{"chat_member", "message", "callback_query", "my_chat_member"}}
 	BotSettings telebot.Settings    = telebot.Settings{Token: Token, Poller: BotPoller}
 	Bot         *telebot.Bot        = functions.ReturnBot(telebot.NewBot(BotSettings))
 	DB          int                 = 9

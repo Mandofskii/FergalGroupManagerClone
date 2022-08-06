@@ -9,6 +9,27 @@ import (
 	"gopkg.in/telebot.v3"
 )
 
+func NewChatMemberHandler(ctx telebot.Context) error {
+	oldRole := ctx.ChatMember().OldChatMember.Role
+	newRole := ctx.ChatMember().NewChatMember.Role
+	userID := ctx.ChatMember().NewChatMember.User.ID
+	chatID := ctx.Chat().ID
+	if database.IsAutoConfigure(chatID) {
+		if oldRole == "administrator" && (newRole == "member" || newRole == "left") {
+			database.RemAdmin(userID, chatID)
+		} else if oldRole == "member" || oldRole == "left" {
+			if newRole == "creator" {
+				database.AddOwner(userID, chatID)
+				database.AddAdmin(userID, chatID)
+			}
+			if newRole == "administrator" {
+				database.AddAdmin(userID, chatID)
+			}
+		}
+	}
+	return nil
+}
+
 func NewMyChatMemberHandler(ctx telebot.Context) error {
 	var err error
 	chatID := ctx.Chat().ID
@@ -17,7 +38,6 @@ func NewMyChatMemberHandler(ctx telebot.Context) error {
 	if ctx.Bot().Me.Username == ctx.ChatMember().NewChatMember.User.Username {
 		if ctx.ChatMember().NewChatMember.Role == "member" {
 			if ctx.ChatMember().Chat.Type == "supergroup" {
-				// Here configuring group
 				admins, err := ctx.Bot().AdminsOf(ctx.Chat())
 				functions.HandleError(err)
 				for _, v := range admins {
@@ -28,7 +48,7 @@ func NewMyChatMemberHandler(ctx telebot.Context) error {
 					}
 					database.AddAdmin(userID, chatID)
 				}
-				database.Set(baseGroupKey+"rudeMode", "0", 0)
+
 				database.InstallGroup(chatID)
 				v := &telebot.Video{File: telebot.FromDisk("assets/installed.mp4")}
 				v.Caption = globals.InstalledAnswer
