@@ -11,7 +11,7 @@ Todo list :
   - Locks commands and handlers
 
   - ~~Mute & Ban system~~
-  - ~~Filter System~~
+  - ~~Filter System~~ (ٌWorking on hidden filter)
   - Promotion System
 
 
