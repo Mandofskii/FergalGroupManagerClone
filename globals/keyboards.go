@@ -174,4 +174,13 @@ var (
 			},
 		},
 	}
+	HiddenFilterKeyboard *telebot.ReplyMarkup = &telebot.ReplyMarkup{
+		ReplyKeyboard: [][]telebot.ReplyButton{
+			{
+				{Text: "پایان"},
+			},
+		},
+		ResizeKeyboard: true,
+	}
+	RemoveKeyboard *telebot.ReplyMarkup = &telebot.ReplyMarkup{RemoveKeyboard: true}
 )

@@ -30,8 +30,36 @@ func HandleNewMessages(ctx telebot.Context) error {
 
 	answer := ""
 	if chatType == "private" {
-		if textMessage == "/start" {
-			err = ctx.Send(globals.StartAnswer, &telebot.SendOptions{ParseMode: "markdown", ReplyMarkup: globals.StartKeyboard})
+		if step := database.GetUserStep(senderID); strings.Contains(step, "hiddenFilter") {
+			if textMessage != "پایان" {
+				filterChatID := strings.Split(step, "|")[1]
+				filterChatID64 := functions.StringToInt64(filterChatID)
+				lower := strings.ToLower(textMessage)
+				if database.IsFilter(filterChatID64, lower) {
+					answer = fmt.Sprintf(globals.AlreadyFiltered, textMessage)
+				} else {
+					database.AddFilter(filterChatID64, lower)
+					answer = fmt.Sprintf(globals.Filtered, textMessage)
+				}
+				err = ctx.Send(answer, &telebot.SendOptions{ParseMode: "markdown"})
+			} else {
+				err = ctx.Send("−◾️┈┅━ عملیات به پایان رسید 🏁", &telebot.SendOptions{ReplyMarkup: globals.RemoveKeyboard})
+				database.SetUserStep(senderID, "")
+			}
+		} else {
+			if textMessage == "/start" {
+				err = ctx.Send(globals.StartAnswer, &telebot.SendOptions{ParseMode: "markdown", ReplyMarkup: globals.StartKeyboard})
+			} else if strings.Contains(textMessage, "/start filter_") {
+				base := strings.Split(textMessage, "_")
+				filterChatID := base[1]
+				filterSenderID := base[2]
+				if database.IsInstalled(functions.StringToInt64(filterChatID)) && filterSenderID == stringSenderID {
+					database.SetUserStep(senderID, "hiddenFilter|"+filterChatID)
+					err = ctx.Send(globals.HiddenFilter, &telebot.SendOptions{ParseMode: "markdown", ReplyMarkup: globals.HiddenFilterKeyboard})
+				} else {
+					err = ctx.Send(globals.StartAnswer, &telebot.SendOptions{ParseMode: "markdown", ReplyMarkup: globals.StartKeyboard})
+				}
+			}
 		}
 	} else {
 		if database.IsInstalled(chatID) && database.IsAdmin(senderID, chatID) {
@@ -139,6 +167,9 @@ func HandleNewMessages(ctx telebot.Context) error {
 					}
 					err = ctx.Send(answer, &telebot.SendOptions{ParseMode: "markdown"})
 				}
+			case lowerText == "فیلتر مخفی":
+				link := "https://t.me/" + bot.Me.Username + "?start=filter_" + stringChatID + "_" + stringSenderID
+				err = ctx.Reply(fmt.Sprintf(globals.HiddenFilter, link), &telebot.SendOptions{ParseMode: "markdown"})
 			case strings.Contains(lowerText, "filter"), strings.Contains(lowerText, "فیلتر"):
 				muteRegexPattern := `(filter|فیلتر) (.*)`
 				r := regexp.MustCompile(muteRegexPattern)
@@ -321,7 +352,7 @@ func HandleNewMessages(ctx telebot.Context) error {
 							} else {
 								database.BanUser(bot, chat, userID, timeTTL)
 								if last == "همیشه" {
-									last = "برای همیشه سکوت شد 🔇"
+									last = "برای همیشه بن شد 🔇"
 								} else {
 									last = fmt.Sprintf(globals.BannedForTime, last)
 								}

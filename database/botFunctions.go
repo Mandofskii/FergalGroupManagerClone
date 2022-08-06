@@ -276,3 +276,11 @@ func UnbanUser(bot *telebot.Bot, chat *telebot.Chat, userID int64) {
 	functions.HandleError(err)
 	RemBan(userID, chat.ID)
 }
+
+func SetUserStep(userID int64, step string) {
+	Set("user:"+functions.Int64ToString(userID)+":step", step, 0)
+}
+
+func GetUserStep(userID int64) string {
+	return Get("user:" + functions.Int64ToString(userID) + ":step")
+}
