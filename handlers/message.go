@@ -168,6 +168,17 @@ func HandleNewMessages(ctx telebot.Context) error {
 						answer = fmt.Sprintf(globals.ListCleaned, "سکوت")
 					}
 					err = ctx.Send(answer)
+				case strings.Contains(lowerText, "clean ban list"), strings.Contains(lowerText, "پاکسازی لیست بن"):
+					if len(database.ListMute(chatID)) == 0 {
+						answer = fmt.Sprintf(globals.ListAlreadyEmpty, "بن")
+					} else {
+						for _, muted := range database.ListBan(chatID) {
+							database.UnbanUser(ctx.Bot(), chat, functions.StringToInt64(muted))
+						}
+						database.CleanBan(chatID)
+						answer = fmt.Sprintf(globals.ListCleaned, "بن")
+					}
+					err = ctx.Send(answer)
 				case strings.Contains(lowerText, "unmute"), strings.Contains(lowerText, "حذف سکوت"):
 					firstName := ""
 					userID := int64(0)
@@ -242,6 +253,84 @@ func HandleNewMessages(ctx telebot.Context) error {
 						}
 					}
 					err = ctx.Send(answer, &telebot.SendOptions{ParseMode: "markdown"})
+				case strings.Contains(lowerText, "unban"), strings.Contains(lowerText, "حذف بن"):
+					firstName := ""
+					userID := int64(0)
+					if message.ReplyTo != nil {
+						firstName = message.ReplyTo.Sender.FirstName
+						userID = message.ReplyTo.Sender.ID
+					} else {
+						base := strings.Split(textMessage, " ")
+						username := base[len(base)-1]
+						for _, v := range message.Entities {
+							if v.Offset == len([]rune(textMessage))-len([]rune(username)) {
+								if !strings.HasPrefix(username, "@") {
+									firstName = v.User.FirstName
+									userID = v.User.ID
+								} else {
+									firstName, userID = database.GetUserIDByUsername(bot, username, chatID)
+								}
+							}
+						}
+					}
+					mention := functions.CreateMarkdownMention(userID, firstName)
+					if database.IsBan(userID, chatID) {
+						if database.IsOwner(userID, chatID) {
+							answer = fmt.Sprintf(globals.HaveRole, mention, "مالک")
+						} else if database.IsAdmin(userID, chatID) || functions.IsGAdmin(ctx.Bot(), chat, functions.Int64ToString(userID)) {
+							database.UnbanUser(ctx.Bot(), chat, userID)
+							answer = fmt.Sprintf(globals.HaveRole, mention, "مدیر")
+						} else {
+							database.UnbanUser(ctx.Bot(), chat, userID)
+							answer = fmt.Sprintf(globals.RemovedFromBanList, mention)
+						}
+					} else {
+						answer = fmt.Sprintf(globals.AlreadyRemovedFromBanList, mention)
+					}
+
+					ctx.Send(answer, &telebot.SendOptions{ParseMode: "markdown"})
+				case strings.Contains(lowerText, "ban"), strings.Contains(lowerText, "بن"):
+					firstName := ""
+					userID := int64(0)
+					timeTTL, username, last := functions.GetBanTime(lowerText)
+					if message.ReplyTo != nil {
+						firstName = message.ReplyTo.Sender.FirstName
+						userID = message.ReplyTo.Sender.ID
+					} else {
+						for _, v := range message.Entities {
+							if v.Offset == len([]rune(textMessage))-len([]rune(username)) {
+								if !strings.HasPrefix(username, "@") {
+									firstName = v.User.FirstName
+									userID = v.User.ID
+								} else {
+									firstName, userID = database.GetUserIDByUsername(bot, username, chatID)
+								}
+							}
+						}
+					}
+					chatMember, _ := bot.ChatMemberOf(chat, functions.Int64ToString(userID))
+					if chatMember.Role != "left" {
+						mention := functions.CreateMarkdownMention(userID, firstName)
+						if database.IsBan(userID, chatID) {
+							answer = fmt.Sprintf(globals.AlreadyAddedToBanList, mention)
+						} else {
+							if database.IsOwner(userID, chatID) {
+								answer = fmt.Sprintf(globals.HaveRole, mention, "مالک")
+							} else if database.IsAdmin(userID, chatID) || functions.IsGAdmin(bot, chat, functions.Int64ToString(userID)) {
+								answer = fmt.Sprintf(globals.HaveRole, mention, "مدیر")
+							} else {
+								database.BanUser(bot, chat, userID, timeTTL)
+								if last == "همیشه" {
+									last = "برای همیشه سکوت شد 🔇"
+								} else {
+									last = fmt.Sprintf(globals.BannedForTime, last)
+								}
+								answer = fmt.Sprintf(globals.AddedToBanList, mention, last)
+							}
+						}
+						err = ctx.Send(answer, &telebot.SendOptions{ParseMode: "markdown"})
+					}
+
 				}
 			}
 		}

@@ -65,8 +65,14 @@ var (
 	AlreadyAddedToMuteList     string = `−⚠️┈┅━ کاربر %s در لیست سکوت قرار دارد`
 	MutedForTime               string = `
 	−◾️┈┅━ به مدت %s سکوت شد 🔇`
-	AlreadyFiltered     string = `−◾️┈┅━ کلمه *%s* در لیست فیلتر موجود است`
-	Filtered            string = `−◾️┈┅━ کلمه *%s* با موفقیت فیلتر شد ⚠️`
-	AlreadyNotFiltered  string = `−◾️┈┅━ کلمه *%s* فیلتر نیست`
-	RemovedFromFiltered string = `−◾️┈┅━ کلمه *%s* آزاد شد`
+	AlreadyFiltered           string = `−◾️┈┅━ کلمه *%s* در لیست فیلتر موجود است`
+	Filtered                  string = `−◾️┈┅━ کلمه *%s* با موفقیت فیلتر شد ⚠️`
+	AlreadyNotFiltered        string = `−◾️┈┅━ کلمه *%s* فیلتر نیست`
+	RemovedFromFiltered       string = `−◾️┈┅━ کلمه *%s* آزاد شد`
+	AddedToBanList            string = `−◾️┈┅━ کاربر %s %s`
+	RemovedFromBanList        string = `−◾️┈┅━ کاربر %s حذف بن شد`
+	AlreadyRemovedFromBanList string = `−◾️┈┅━ کاربر %s بن نیست`
+	AlreadyAddedToBanList     string = `−⚠️┈┅━ کاربر %s در لیست بن قرار دارد`
+	BannedForTime             string = `
+	−◾️┈┅━ به مدت %s بن شد 🔇`
 )

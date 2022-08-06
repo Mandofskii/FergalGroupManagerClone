@@ -209,3 +209,70 @@ func HasFilteredWord(chatID int64, text string) bool {
 func CleanFilter(chatID int64) {
 	Rem("group:" + functions.Int64ToString(chatID) + ":filters")
 }
+
+func AddBan(userID, chatID int64, hash string, until int) {
+	fmt.Printf("%#v", ListMute(chatID))
+	stringUserID, stringChatID := functions.Int64ToString(userID), functions.Int64ToString(chatID)
+	SAdd("group:"+stringChatID+":bans", stringUserID+"|"+hash)
+	if until == 1 {
+		until = 0
+	}
+	Set("group:"+stringChatID+":banned:hash:"+hash, "nothing special here", until)
+}
+
+func IsBan(userID, chatID int64) bool {
+	stringUserID := functions.Int64ToString(userID)
+	for _, banned := range ListBan(chatID) {
+		fmt.Println(banned)
+		if strings.Split(banned, "|")[0] == stringUserID {
+			return true
+		}
+	}
+	return false
+}
+
+func ListBan(chatID int64) []string {
+	correctedList := []string{}
+	stringChatID := functions.Int64ToString(chatID)
+	result := SMembers("group:" + stringChatID + ":bans")
+	fmt.Printf("%#v\n", result)
+	for _, banned := range result {
+		if Get("group:"+stringChatID+":banned:hash:"+strings.Split(banned, "|")[1]) != "" {
+			correctedList = append(correctedList, strings.Split(banned, "|")[0])
+		} else {
+			SRem("group:"+stringChatID+":bans", banned)
+		}
+	}
+	return correctedList
+}
+
+func CleanBan(chatID int64) {
+	stringChatID := functions.Int64ToString(chatID)
+	Rem("group:" + stringChatID + ":bans")
+}
+
+func RemBan(userID, chatID int64) {
+	stringUserID, stringChatID := functions.Int64ToString(userID), functions.Int64ToString(chatID)
+	for _, banned := range SMembers("group:" + stringChatID + ":bans") {
+		if strings.Split(banned, "|")[0] == stringUserID {
+			SRem("group:"+stringChatID+":bans", banned)
+		}
+	}
+}
+
+func BanUser(bot *telebot.Bot, chat *telebot.Chat, userID, timeTTL int64) {
+	chatMember, _ := bot.ChatMemberOf(chat, functions.Int64ToString(userID))
+	if timeTTL != 1 {
+		chatMember.RestrictedUntil = time.Now().Unix() + int64(timeTTL)
+	}
+	revokeMessages := Get("group:"+functions.Int64ToString(chat.ID)+":delMsgBan") == "1"
+	bot.Ban(chat, chatMember, revokeMessages)
+	hash := uuid.NewString()
+	AddBan(userID, chat.ID, hash, int(timeTTL))
+}
+
+func UnbanUser(bot *telebot.Bot, chat *telebot.Chat, userID int64) {
+	err := bot.Unban(chat, functions.Int64ToString(userID))
+	functions.HandleError(err)
+	RemBan(userID, chat.ID)
+}
